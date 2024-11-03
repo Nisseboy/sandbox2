@@ -51,6 +51,8 @@ class SceneGame extends Scene {
   }
 
   update(dt) {
+    let t = performance.now();
+
     this.lastMouseWorldPos = this.mouseWorldPos.copy();
     this.mouseWorldPos = this.cam.from(mouse).floor();
 
@@ -75,9 +77,12 @@ class SceneGame extends Scene {
     }
 
     this.world.updateChunk(new Vec(Math.floor(this.cam.pos.x - 432), Math.floor(this.cam.pos.y - 432 / 16 * 9)), new Vec(Math.floor(this.cam.pos.x + 432 * 2), Math.floor(this.cam.pos.y + 432 / 16 * 9 * 2)));
+
+    debugStats.timeUpdate = performance.now() - t;
   }
 
   render() {
+    let t = performance.now();
     let cam = this.cam;
     let world = this.world;
     let camSize = new Vec(cam.w, cam.w / 16 * 9);
@@ -112,6 +117,8 @@ class SceneGame extends Scene {
         
 
         let c = mat.c;
+        
+
           
         let k = (x + y * this.img.size.x) * 4;
         pxls[k++] = c.x;
@@ -140,7 +147,7 @@ class SceneGame extends Scene {
     renderer.restore();
 
 
-
+/*
     let noiseImg = this.noiseImg;
     //noiseImg = tex["background/60"];
 
@@ -156,8 +163,10 @@ class SceneGame extends Scene {
     renderer.translate(new Vec(-camSize.x, 0));
     renderer.image(noiseImg, camSize._div(-2), camSize);
     renderer.restore();
-  
+  */
 
     renderer.restore();
+
+    debugStats.timeRender = performance.now() - t;
   }
 }

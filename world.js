@@ -26,116 +26,123 @@ class World {
 
       }
     }
+
+    this.even = true;
   }
 
   updateChunk(tl, br) {
     let sizeX = (br.x - tl.x);
     let sizeY = (br.y - tl.y);
 
-    let updated = new Uint8Array(sizeX * sizeY);
+    let x;
+    let y;
+    let k;
+    let matIndex;
+    let mat;
+    let state;
+    let idx;
+    let other;
+    let otherMat;
+    let otherState;
+          
+    let leftIndex;
+    let rightIndex;
 
-    for (let X = 0; X < sizeX; X++) {
-      for (let Y = sizeY - 1; Y >= 0; Y--) {
-        let updatedK = X + Y * sizeX;
-        //if (updated[updatedK] == 1) continue;
+    let left;
+    let right;
 
-        let x = tl.x + X//(X * 2) % sizeX + ((X * 2 > sizeX) ? 1 : 0);
-        let y = tl.y + Y;
+    let leftMat;
+    let rightMat;
+
+    let leftState;
+    let rightState;
+
+    let leftWorks;
+    let rightWorks;
+
+    let chosen;
+
+
+    for (let Y = sizeY - 1; Y >= 0; Y--) {
+      for (let X = 0; X < sizeX; X++) {
+        x = tl.x + (this.even?X:(sizeX-X));
+        y = tl.y + Y;
 
         if (x < 10 || x > this.size.x - 10 || y < 10 || y > this.size.y - 10) continue;
 
-        let k = (x + y * this.size.x);
+        k = (x + y * this.size.x);
 
-        let matIndex = this.g[k];
+        matIndex = this.g[k];
         if (matIndex == 0) continue;
-        let mat = mats[matIndex];
+        mat = mats[matIndex];
+        state = mat.state;
         
-        if (mat.state == STATE_SOLID || mat.state == STATE_GAS) continue;
+        if (state == STATE_SOLID || state == STATE_GAS) continue;
 
-        if (mat.state == STATE_DUST) {
-          let belowIndex = k + this.size.x;
-          let below = this.g[belowIndex];
 
-          if (below == 0 || mats[below].state == STATE_GAS || mats[below].state == STATE_LIQUID) {
-            this.g[belowIndex] = matIndex;
-            this.g[k] = below;
-            updated[updatedK + sizeX] = 1;
+        if (state == STATE_DUST) {
+          idx = k + this.size.x;
+          other = this.g[idx];
+          otherMat = mats[other];
+          otherState = otherMat.state;
+
+          if (
+            (state == STATE_DUST && (otherState == STATE_GAS || otherState == STATE_LIQUID)) ||
+            (state == STATE_LIQUID && (otherState == STATE_GAS))
+          ) {
+            this.g[idx] = matIndex;
+            this.g[k] = other;
+
             continue;
           }
 
-          let leftIndex = k + this.size.x - 1;
-          let left = this.g[leftIndex];
 
-          if (left == 0 || mats[left].state == STATE_GAS || mats[left].state == STATE_LIQUID) {
-            this.g[leftIndex] = matIndex;
-            this.g[k] = left;
-            updated[updatedK + sizeX - 1] = 1;
-            continue;
+          
+
+          leftIndex = k + this.size.x - 1;
+          rightIndex = k + this.size.x + 1;
+
+          left = this.g[leftIndex];
+          right = this.g[rightIndex];
+
+          leftMat = mats[left];
+          rightMat = mats[right];
+
+          leftState = leftMat.state;
+          rightState = rightMat.state;
+
+          leftWorks = (state == STATE_DUST && (leftState == STATE_GAS || leftState == STATE_LIQUID)) || (state == STATE_LIQUID && (leftState == STATE_GAS));
+          rightWorks = (state == STATE_DUST && (rightState == STATE_GAS || rightState == STATE_LIQUID)) || (state == STATE_LIQUID && (rightState == STATE_GAS));
+
+          chosen = -1;
+          if (leftWorks && rightWorks) {
+            chosen = Math.round(Math.random());
+          } else if (leftWorks || rightWorks) {
+            chosen = leftWorks?0:1;
           }
 
-          let rightIndex = k + this.size.x + 1;
-          let right = this.g[rightIndex];
+          if (chosen != -1) {
+            if (chosen == 0) {
+              idx = leftIndex;
+              other = left;
+              otherMat = leftMat;
+              otherState = leftState;
+            } else {
+              idx = rightIndex;
+              other = right;
+              otherMat = rightMat;
+              otherState = rightState;
+            }
 
-          if (right == 0 || mats[right].state == STATE_GAS || mats[right].state == STATE_LIQUID) {
-            this.g[rightIndex] = matIndex;
-            this.g[k] = right;
-            updated[updatedK + sizeX + 1] = 1;
-            continue;
-          }
-        }
+            this.g[idx] = matIndex;
+            this.g[k] = other;
 
-        if (mat.state == STATE_LIQUID) {
-          let belowIndex = k + this.size.x;
-          let below = this.g[belowIndex];
-
-          if (below == 0 || mats[below].state == STATE_GAS) {
-            this.g[belowIndex] = matIndex;
-            this.g[k] = below;
-            updated[updatedK + sizeX] = 1;
-            continue;
-          }
-
-          let leftIndex = k + this.size.x - 1;
-          let left = this.g[leftIndex];
-
-          if (left == 0 || mats[left].state == STATE_GAS) {
-            this.g[leftIndex] = matIndex;
-            this.g[k] = left;
-            updated[updatedK + sizeX - 1] = 1;
-            continue;
-          }
-
-          let rightIndex = k + this.size.x + 1;
-          let right = this.g[rightIndex];
-
-          if (right == 0 || mats[right].state == STATE_GAS) {
-            this.g[rightIndex] = matIndex;
-            this.g[k] = right;
-            updated[updatedK + sizeX + 1] = 1;
-            continue;
-          }
-
-          let bleftIndex = k - 1;
-          let bleft = this.g[bleftIndex];
-
-          if (bleft == 0 || mats[bleft].state == STATE_GAS) {
-            this.g[bleftIndex] = matIndex;
-            this.g[k] = bleft;
-            updated[updatedK - 1] = 1;
-            continue;
-          }
-
-          let brightIndex = k + 1;
-          let bright = this.g[brightIndex];
-
-          if (bright == 0 || mats[bright].state == STATE_GAS) {
-            this.g[brightIndex] = matIndex;
-            this.g[k] = bright;
-            updated[updatedK + 1] = 1;
             continue;
           }
         }
       }
     }
+
+    this.even = !this.even;
   }
 }
